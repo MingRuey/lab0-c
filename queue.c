@@ -12,17 +12,53 @@
 queue_t *q_new()
 {
     queue_t *q = malloc(sizeof(queue_t));
-    /* TODO: What if malloc returned NULL? */
+    if (!q) {
+        return NULL;
+    }
     q->head = NULL;
+    q->tail = NULL;
+    q->size = 0;
     return q;
 }
 
 /* Free all storage used by queue */
 void q_free(queue_t *q)
 {
-    /* TODO: How about freeing the list elements and the strings? */
-    /* Free queue structure */
+    if (!q) {
+        return;
+    }
+
+    while (q->head) {
+        list_ele_t *target = q->head;
+        q->head = q->head->next;
+        free(target->value);
+        free(target);
+    }
     free(q);
+}
+
+/*
+ * Attempt to create an element with value being s.
+ * Return the pointer to element if successful.
+ * Return NULL otherwise.
+ */
+static list_ele_t *loc_element(char *s)
+{
+    list_ele_t *new = malloc(sizeof(list_ele_t));
+    if (!new) {
+        return NULL;
+    }
+
+    size_t s_length = strlen(s) + 1;
+    char *val = malloc(sizeof(char) * s_length);
+    if (!val) {
+        free(new);
+        return NULL;
+    }
+    memcpy(val, s, sizeof(char) * s_length);
+    new->value = val;
+    new->next = NULL;
+    return new;
 }
 
 /*
@@ -34,13 +70,21 @@ void q_free(queue_t *q)
  */
 bool q_insert_head(queue_t *q, char *s)
 {
-    list_ele_t *newh;
-    /* TODO: What should you do if the q is NULL? */
-    newh = malloc(sizeof(list_ele_t));
-    /* Don't forget to allocate space for the string and copy it */
-    /* What if either call to malloc returns NULL? */
+    if (!q) {
+        return false;
+    }
+
+    list_ele_t *newh = loc_element(s);
+    if (!newh) {
+        return false;
+    }
+
+    if (!q->tail) {
+        q->tail = newh;
+    }
     newh->next = q->head;
     q->head = newh;
+    q->size++;
     return true;
 }
 
@@ -53,10 +97,23 @@ bool q_insert_head(queue_t *q, char *s)
  */
 bool q_insert_tail(queue_t *q, char *s)
 {
-    /* TODO: You need to write the complete code for this function */
-    /* Remember: It should operate in O(1) time */
-    /* TODO: Remove the above comment when you are about to implement. */
-    return false;
+    if (!q) {
+        return false;
+    }
+
+    list_ele_t *newt = loc_element(s);
+    if (!newt) {
+        return false;
+    }
+
+    if (!q->tail) {
+        q->head = newt;
+    } else {
+        q->tail->next = newt;
+    }
+    q->tail = newt;
+    q->size++;
+    return true;
 }
 
 /*
@@ -69,9 +126,29 @@ bool q_insert_tail(queue_t *q, char *s)
  */
 bool q_remove_head(queue_t *q, char *sp, size_t bufsize)
 {
-    /* TODO: You need to fix up this code. */
-    /* TODO: Remove the above comment when you are about to implement. */
+    if (!q || !q->size) {
+        return false;
+    }
+
+    list_ele_t *target = q->head;
     q->head = q->head->next;
+    q->size--;
+    if (!q->size) {
+        q->tail = NULL;
+    }
+
+    if (sp) {
+        size_t v_length = strlen(target->value);
+        if (v_length > bufsize) {
+            memcpy(sp, target->value, bufsize - 1);
+            sp[bufsize - 1] = '\0';
+        } else {
+            memcpy(sp, target->value, sizeof(char) * (v_length + 1));
+        }
+    }
+    free(target->value);
+    free(target);
+
     return true;
 }
 
@@ -93,8 +170,26 @@ int q_size(queue_t *q)
  */
 void q_reverse(queue_t *q)
 {
-    /* TODO: You need to write the code for this function */
-    /* TODO: Remove the above comment when you are about to implement. */
+    if (!q || !q->size || q->size == 1) {
+        return;
+    }
+
+    // reverse the linked-list
+    list_ele_t *next = q->head->next;
+    list_ele_t *cur = q->head;
+    while (next) {
+        list_ele_t *tmp = next->next;
+        next->next = cur;
+
+        cur = next;
+        next = tmp;
+    }
+    q->head->next = NULL;
+
+    // swap head-tail
+    list_ele_t *tmp = q->head;
+    q->head = q->tail;
+    q->tail = tmp;
 }
 
 /*
@@ -104,6 +199,7 @@ void q_reverse(queue_t *q)
  */
 void q_sort(queue_t *q)
 {
-    /* TODO: You need to write the code for this function */
-    /* TODO: Remove the above comment when you are about to implement. */
+    if (!q || !q->size || q->size == 1) {
+        return;
+    }
 }
