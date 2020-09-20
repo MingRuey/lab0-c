@@ -193,6 +193,62 @@ void q_reverse(queue_t *q)
 }
 
 /*
+ * Sort the linked list with known length
+ */
+static void recur_sort(list_ele_t **target, int length)
+{
+    if (length <= 1) {
+        return;
+    }
+    list_ele_t **left_head = target, **right_head = target;
+    int middle = length / 2;
+    for (int i = middle; i > 1; i--) {
+        right_head = &(*right_head)->next;
+    }
+    // just right before the middle element
+    list_ele_t *next = (*right_head)->next;
+    (*right_head)->next = NULL;
+    right_head = &next;
+
+    recur_sort(left_head, middle);
+    recur_sort(right_head, length - middle);
+
+    list_ele_t *last = *target, *left = *left_head, *right = *right_head;
+    bool flag = false;
+    while (true) {
+        if (!left) {
+            last->next = right;
+            break;
+        } else if (!right) {
+            last->next = left;
+            break;
+        }
+
+        if (strcmp(left->value, right->value) <= 0) {
+            if (!flag) {
+                flag = true;
+                *target = left;
+                last = left;
+            } else {
+                last->next = left;
+                last = left;
+            }
+            left = left->next;
+        } else {
+            if (!flag) {
+                flag = true;
+                *target = right;
+                last = right;
+            } else {
+                last->next = right;
+                last = right;
+            }
+            right = right->next;
+        }
+    }
+}
+
+/*
  * Sort elements of queue in ascending order
  * No effect if q is NULL or empty. In addition, if q has only one
  * element, do nothing.
@@ -202,4 +258,7 @@ void q_sort(queue_t *q)
     if (!q || !q->size || q->size == 1) {
         return;
     }
+    list_ele_t **head = &(q->head);
+    recur_sort(head, q->size);
+    q->head = *head;
 }
