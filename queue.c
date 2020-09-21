@@ -137,6 +137,7 @@ bool q_remove_head(queue_t *q, char *sp, size_t bufsize)
         q->tail = NULL;
     }
 
+    // TODO(memcpy to sp could case buffer overflow?)
     if (sp) {
         size_t v_length = strlen(target->value);
         if (v_length > bufsize) {
