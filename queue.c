@@ -79,7 +79,7 @@ bool q_insert_head(queue_t *q, char *s)
         return false;
     }
 
-    if (!q->tail) {
+    if (!q->size) {
         q->tail = newh;
     }
     newh->next = q->head;
@@ -106,7 +106,7 @@ bool q_insert_tail(queue_t *q, char *s)
         return false;
     }
 
-    if (!q->tail) {
+    if (!q->size) {
         q->head = newt;
     } else {
         q->tail->next = newt;
@@ -126,7 +126,7 @@ bool q_insert_tail(queue_t *q, char *s)
  */
 bool q_remove_head(queue_t *q, char *sp, size_t bufsize)
 {
-    if (!q || !q->size) {
+    if (!q || !q->head) {
         return false;
     }
 
@@ -171,7 +171,7 @@ int q_size(queue_t *q)
  */
 void q_reverse(queue_t *q)
 {
-    if (!q || !q->size || q->size == 1) {
+    if (!q || !q->head || q->size <= 1) {
         return;
     }
 
@@ -193,60 +193,56 @@ void q_reverse(queue_t *q)
     q->tail = tmp;
 }
 
+
 /*
- * Sort the linked list with known length
+ * Merge two list and return the new head.
+ */
+static list_ele_t *merge(list_ele_t *head1, list_ele_t *head2)
+{
+    list_ele_t *merged = NULL;
+    list_ele_t *cursor = NULL;
+    while (head1 && head2) {
+        list_ele_t **head =
+            strcmp(head1->value, head2->value) <= 0 ? &head1 : &head2;
+        if (!cursor) {
+            merged = *head;
+            cursor = *head;
+        } else {
+            cursor->next = *head;
+            cursor = cursor->next;
+        }
+        *head = (*head)->next;
+    }
+
+    if (head1) {
+        cursor->next = head1;
+    } else if (head2) {
+        cursor->next = head2;
+    }
+    return merged;
+}
+
+/*
+ * Sort the linked list with known length.
  */
 static void recur_sort(list_ele_t **target, int length)
 {
     if (length <= 1) {
         return;
     }
-    list_ele_t **left_head = target, **right_head = target;
-    int middle = length / 2;
-    for (int i = middle; i > 1; i--) {
-        right_head = &(*right_head)->next;
+
+    list_ele_t *lhead = *target, *rhead = *target;
+    int halflen = length / 2;
+    for (int i = halflen; i > 1; i--) {
+        rhead = rhead->next;
     }
-    // just right before the middle element
-    list_ele_t *next = (*right_head)->next;
-    (*right_head)->next = NULL;
-    right_head = &next;
+    list_ele_t *tmp = rhead;
+    rhead = rhead->next;
+    tmp->next = NULL;
 
-    recur_sort(left_head, middle);
-    recur_sort(right_head, length - middle);
-
-    list_ele_t *last = *target, *left = *left_head, *right = *right_head;
-    bool flag = false;
-    while (true) {
-        if (!left) {
-            last->next = right;
-            break;
-        } else if (!right) {
-            last->next = left;
-            break;
-        }
-
-        if (strcmp(left->value, right->value) <= 0) {
-            if (!flag) {
-                flag = true;
-                *target = left;
-                last = left;
-            } else {
-                last->next = left;
-                last = left;
-            }
-            left = left->next;
-        } else {
-            if (!flag) {
-                flag = true;
-                *target = right;
-                last = right;
-            } else {
-                last->next = right;
-                last = right;
-            }
-            right = right->next;
-        }
-    }
+    recur_sort(&lhead, halflen);
+    recur_sort(&rhead, length - halflen);
+    *target = merge(lhead, rhead);
 }
 
 /*
@@ -256,10 +252,14 @@ static void recur_sort(list_ele_t **target, int length)
  */
 void q_sort(queue_t *q)
 {
-    if (!q || !q->size || q->size == 1) {
+    if (!q || !q->head || q->size <= 1) {
         return;
     }
-    list_ele_t **head = &(q->head);
-    recur_sort(head, q->size);
-    q->head = *head;
+
+    recur_sort(&q->head, q->size);
+    list_ele_t *ele = q->head;
+    for (int l = q->size; l > 0; l--) {
+        ele = ele->next;
+    }
+    q->tail = ele;
 }
