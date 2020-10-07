@@ -252,13 +252,13 @@ static void recur_sort(list_ele_t **target, int length)
  */
 void q_sort(queue_t *q)
 {
-    if (!q || !q->head || q->size <= 1) {
+    if (!q || !q->size || q->size == 1) {
         return;
     }
 
     recur_sort(&q->head, q->size);
     list_ele_t *ele = q->head;
-    for (int l = q->size; l > 0; l--) {
+    for (int l = q->size; l > 1; l--) {
         ele = ele->next;
     }
     q->tail = ele;
